@@ -43,7 +43,7 @@ int main(int argc, char **argv)
     float c_light;
     float k_boltzman;
     float delta_lambda;
-    
+
                 
 
     //printf("class for convetion\n");
@@ -154,10 +154,11 @@ int main(int argc, char **argv)
                 //calculate plack law -> B(T) -> L units
                 B[i]=(2*h_planck*c_light*c_light)/(pow(lambda,5)*((exp(h_planck*c_light/(lambda*k_boltzman*T[i])))-1));
                 //a function to integrate B
-                for(int i=0; i<N; i++){
-                    float zz; //geschickter?
+                float zz; //geschickter?
+                for(int z=0; z<N; z++){
                     zz=B[i]*delta_lambda;
                 }
+                float E_up_B = zz;
 
             }
 
@@ -174,9 +175,11 @@ int main(int argc, char **argv)
                 for(int i; i<nlayer+1; i++){
                     //calculate L
                     
-                    //L_up[i]=L_up[i+1]*(1-absorb)+(1/pi)*sigma_b*pow(T[i],4)*emi;
-                    L_up[i]=L_up[i+1]*(1-absorb)+B[i];  //
-                    E_up[i]=E_up[i]+2*pi*L_up[i]*mu*delta_mu;
+                    //
+                    
+                    L_up[i]=L_up[i+1]*(1-absorb)+(1/pi)*sigma_b*pow(T[i],4)*emi;
+                    //E_up[i]=E_up[i]+2*pi*L_up[i]*mu*delta_mu;
+                    E_up[i]=E_up[i]+E_up_B;
                 }
 
                 //downward L_down
@@ -229,3 +232,7 @@ return 0;
 }
 //edit note: 17.Okt.2023
 //edit note: 30.Okt.2023
+//edit note: 07.Okt.2023 implemented direction and wavelength dependency of each cloud layer. Worked on the sum function of B and next step to update the E_up/E_down. Need to work with the theory first.
+
+
+
