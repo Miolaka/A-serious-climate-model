@@ -42,6 +42,8 @@ int main(int argc, char **argv)
     float h_planck;
     float c_light;
     float k_boltzman;
+    float delta_lambda;
+    
                 
 
     //printf("class for convetion\n");
@@ -135,23 +137,28 @@ int main(int argc, char **argv)
         //2.4.2 Calculate better E (better cloud radiation)
         //for wavelength-> for directions-> for ilayer
         for(int ilambda=0; ilambda<3; ilambda++){
+                delta_lambda = 2*pow(10,-6);
             if(ilambda>0&& ilambda<2){
                 tau = 0;
                 lambda = 10*pow(10,-6); //800nm in meter
             }
             else if(ilambda<1){
                 tau = 0.1;
-                lambda = 8;
+                lambda = 8*pow(10,-6);
             }
             else{
                 tau = 0.1;
-                lambda = 12;
+                lambda = 12*pow(10,-6);
             }
             for(int i=0; i<nlayer+1; i++){
                 //calculate plack law -> B(T) -> L units
                 B[i]=(2*h_planck*c_light*c_light)/(pow(lambda,5)*((exp(h_planck*c_light/(lambda*k_boltzman*T[i])))-1));
                 //a function to integrate B
-                for()
+                for(int i=0; i<N; i++){
+                    float zz; //geschickter?
+                    zz=B[i]*delta_lambda;
+                }
+
             }
 
             //loop for angle mu
@@ -222,4 +229,3 @@ return 0;
 }
 //edit note: 17.Okt.2023
 //edit note: 30.Okt.2023
-//edit note: 07.Okt. 2023
