@@ -17,7 +17,7 @@ int main(int argc, char **argv)
     int unstable=1; // stability condition 1 or 0
     float p_delta = p_ground/nlevel; //100hPa per level
     float p_middle;
-    int heat_time = 15;
+    int heat_time = 5;
     float heat_temp = 1;
     float epsilon=0.33; //thickness???
     float alpha = epsilon;
@@ -25,25 +25,34 @@ int main(int argc, char **argv)
     float E_up[nlevel];
     float E_down[nlevel];
     float delta_E[nlevel];
-    int delta_time = 60*60*12; //12 stunden
+    int delta_time = 60*60*1; //12 stunden
     float delta_Temp[nlevel];
     float C_p = 1004; // specific constant
     float g= 9.81; //gravitational constant
     float L_up[nlayer];
-    float L_down[nlayer];
-    float delta_mu;
+    float L_down[nlayer]; 
+    int imu_max = 10; //split in 10 steps
     float mu_max=180;
+    float delta_mu=mu_max/imu_max;
     float absorb;
     float emi;
-    float tau = 0.1;
     float pi = 3.14159265;
     float B[nlayer];
     float lambda;
-    float h_planck;
-    float c_light;
-    float k_boltzman;
-    float delta_lambda;
+    float h_planck=6.6260628E-34;
+    float c_light=299792458;
+    float k_boltzman=1.3806503E-23;
 
+    
+    float tau_co2 = 1;
+    float tau_h2o = 1;
+    float tau = tau_co2+tau_h2o;
+
+    float lambda_start = 1*pow(10,-6); 
+    float lambda_end = 26*pow(10,-6);
+    int gridnumber = 25;
+    float delta_lambda = (lambda_end-lambda_start)/gridnumber;
+    //float tau2d[lambda][p]; //not working, non-int
                 
 
     //printf("class for convetion\n");
@@ -51,12 +60,12 @@ int main(int argc, char **argv)
 
     //1. Initial variables
     //1.1 Create pressure gradient, loop time = nlevel
-    for(int i=0; i<nlevel+1; i++){
+    for(int i=0; i<nlevel; i++){
         p[i]=p_ground-(nlevel-i)*p_delta; //1000hPa - n*100hPa
         //printf("%dpressure=%f\n",i,p[i]);
     }
     //1.2 Create temperature gradient, loop time = nlayer
-    for(int i=0; i<nlayer+1; i++){ 
+    for(int i=0; i<nlayer; i++){ 
         T[i]= 293.0-(i)*5.0; //-5K each layer,to ground temp 293K
         //printf("T=%f, i=%d \n",T[i],i);
         theta[i]= T2theta(T[i],p_ground,(p[i]+p[i+1])/2);
@@ -66,32 +75,38 @@ int main(int argc, char **argv)
         printf("%d, theta=%f, T=%f, p_middle=%f\n", i, theta[i], T[i], (p[i]+p[i+1])/2);
     }
         //test
-        T[2]=T[3]-100;
-        T[5]=T[6]-100.0;
+        //T[2]=T[3]-10;
+        //T[5]=T[6]-10.0;
         printf("\n");
-    for(int i=0; i<nlayer+1; i++){ 
+    for(int i=0; i<nlayer; i++){ 
         printf("%d, theta=%f, T=%f, p_middle=%f\n", i, theta[i], T[i], (p[i]+p[i+1])/2);
         printf("--------------------------------\n");
+        printf("initial temperature done \n");
     
     }
 
     //2. Time loop
     for(int it=0; it<heat_time+1; it++){
-        
-        //printf("timeloop,it=%d \n",it);
+
         //2.1 calculate Theta
-        for (int i=0; i<nlevel; i++){ //runs nlevel times
+        for (int i=0; i<nlayer; i++){ //runs nlevel times
             theta[i] = T2theta(T[i],p_ground,(p[i]+p[i+1])/2);
             //printf("hi2\n");
             //printf("i is %d\n", i);
         }
             //printf("i is", i);
-        //2.2 Convection
-        //unstable if 0
+        for(int i=0; i<nlayer; i++){ 
+            printf("%d, theta=%f, T=%f, p_middle=%f\n", i, theta[i], T[i], (p[i]+p[i+1])/2);
+            printf("--------------------------------\n");
+            printf("initial temperature done \n");
+    
+        }
+        printf("2.1 done \n");
 
+        //2.2 Convection //unstable if 0
         while(unstable == 1){
             unstable = 0; //stable assumption
-            for(int i=1; i<nlevel; i++){ //till which i?
+            for(int i=1; i<nlayer; i++){ //till which i?
                 //print info
                 //for(int i=0; i<nlayer+1; i++){ 
                 //    printf("%d, theta=%f, T=%f, p_middle=%f\n", i, theta[i], T[i], (p[i]+p[i+1])/2);
@@ -115,8 +130,9 @@ int main(int argc, char **argv)
                 }
             }
         }
+        printf("2.2 done \n");
         //2.3 new Theta to temperature
-        for (int i=0; i<nlevel+1; i++){                
+        for (int i=0; i<nlayer; i++){                
             T[i] = theta2T(theta[i],p_ground, (p[i]+p[i+1])/2);
             //print info
             //for(int i=0; i<nlayer+1; i++){ 
@@ -125,68 +141,85 @@ int main(int argc, char **argv)
             //printf("\n");
                     
         }
-        
+        printf("2.3 done \n");
         //2.4 Change phase ####### (Radiation)
         //radiation
         //2.4.1 Calculate E (naive cloud radiation)
-        for(int i=0; i<nlevel+1; i++){
-            E_up[i]=E_up[i+1]*(1+alpha)+epsilon*sigma_b*pow(T[i],4);
-            E_down[i+1]=epsilon*sigma_b*pow(T[i+1],4)+(1-alpha)*E_down[i];
-        }
-
+        
+        //for(int i=0; i<nlevel-1; i++){
+        //    E_up[i]=E_up[i+1]*(1+alpha)+epsilon*sigma_b*pow(T[i],4);
+        //    E_down[i+1]=epsilon*sigma_b*pow(T[i+1],4)+(1-alpha)*E_down[i];
+        //}
+  
         //2.4.2 Calculate better E (better cloud radiation)
+        //Radiative Transfer
         //for wavelength-> for directions-> for ilayer
-        for(int ilambda=0; ilambda<3; ilambda++){
-                delta_lambda = 2*pow(10,-6);
-            if(ilambda>0&& ilambda<2){
-                tau = 0;
-                lambda = 10*pow(10,-6); //800nm in meter
+        //lambda from 1 micro to 26 micro
+
+        for (float lambda = lambda_start; lambda<lambda_end; lambda = lambda+delta_lambda){
+            if(lambda>0&& lambda<8*pow(10,-6)){
+                tau_co2 = 1;
+                tau_h2o = 1;
+                tau = tau_co2+tau_h2o;
+
             }
-            else if(ilambda<1){
-                tau = 0.1;
-                lambda = 8*pow(10,-6);
+            else if(lambda>8*pow(10,-6) && lambda<12*pow(10,-6)){
+                tau_co2 = 0.1;
+                tau_h2o = 0.1;
+                tau = tau_co2+tau_h2o;
+
+            }
+            else if(lambda>12*pow(10,-6)){
+                tau_co2 = 1;
+                tau_h2o = 1;
+                tau = tau_co2+tau_h2o;
+
             }
             else{
-                tau = 0.1;
-                lambda = 12*pow(10,-6);
+                tau_co2 = 1;
+                tau_h2o = 1;
+                tau = tau_co2+tau_h2o;
             }
-            for(int i=0; i<nlayer+1; i++){
+            printf("2.4 lambda done \n");
+
+            
+            //zz=zz+ B[i]*delta_lambda;
+
+
+
+            //layer loop, calculate Radiance B, irradiance E_up_B
+            float L_B[nlayer];
+            for(int i=0; i<nlayer; i++){
                 //calculate plack law -> B(T) -> L units
-                B[i]=(2*h_planck*c_light*c_light)/(pow(lambda,5)*((exp(h_planck*c_light/(lambda*k_boltzman*T[i])))-1));
                 //a function to integrate B
-                float zz; //geschickter?
-                for(int z=0; z<N; z++){
-                    zz=B[i]*delta_lambda;
-                }
-                float E_up_B = zz;
+                B[i]=((2*h_planck*c_light*c_light)/(pow(lambda,5)))*((exp(h_planck*c_light/(lambda*k_boltzman*T[i])))-1);
+                L_B[i] = B[i]*delta_lambda;
 
             }
 
             //loop for angle mu
-            int imu_max = 10; //split in 10 steps
             for(int imu=0; imu<imu_max; imu++){
-                float mu=(1+imu)/mu_max;
+                float mu=(1+imu)/imu_max;
                 absorb=1.0-exp(-tau/mu);
                 emi=absorb;
 
                 //upward L_up
                 //(p,T,tau -> E_up, E_dw)
                 L_up[nlayer]=(1/pi)*sigma_b*pow(T[nlevel-1],4);
-                for(int i; i<nlayer+1; i++){
+                for(int i; i<nlayer-1; i++){
                     //calculate L
-                    
-                    //
-                    
-                    L_up[i]=L_up[i+1]*(1-absorb)+(1/pi)*sigma_b*pow(T[i],4)*emi;
-                    //E_up[i]=E_up[i]+2*pi*L_up[i]*mu*delta_mu;
-                    E_up[i]=E_up[i]+E_up_B;
+                    L_up[i]=L_up[i+1]*(1-absorb)+(1/pi)*L_B[i]*emi;
+                    //L_up[i]=L_up[i+1]*(1-absorb)+(1/pi)*sigma_b*pow(T[i],4)*emi;
+                    E_up[i]=E_up[i]+2*pi*L_up[i]*mu*delta_mu;
+                    //E_up[i]=E_up[i]+E_up_B;
                 }
 
                 //downward L_down
                 //
                 L_down[0]=0;
-                for(int i=1; i<nlayer+1; i++){
-                    L_down[i]=L_down[i-1]*(1-absorb)+(1/pi)*sigma_b*pow(T[i-1],4);
+                for(int i=1; i<nlayer; i++){
+                    L_down[i]=L_down[i-1]*(1-absorb)+(1.0/pi)*L_B[i]*emi;
+                    //L_down[i]=L_down[i-1]*(1-absorb)+(1/pi)*sigma_b*pow(T[i-1],4)*emi;
                     E_down[i]=E_down[i]+2*pi*L_down[i]*mu*delta_mu;
                 }
 
@@ -194,15 +227,14 @@ int main(int argc, char **argv)
                 //E=2*pi*(L(mu)*mu[i]*delta_mu;)
             }
         }
-
-        
+        printf("2.4 done \n");
         //???
         
         //2.5 Calculate delta_E (at each level) (Radiance)
-        for(int i=0; i<nlayer+1; i++){
+        for(int i=0; i<nlayer-1; i++){
             delta_E[i] = E_down[i]+E_up[i+1]-E_up[i]-E_down[i+1];
         }
-        
+        printf("2.5 done \n");
         //for (int i=0; i<nlayer; i++){
         //    float delta[nlayer-1]
         //    delta[i]=
@@ -213,7 +245,7 @@ int main(int argc, char **argv)
         //stability = 1; //make unstable
 
         //2.6 From delta_E to temperature
-        for(int i=0; i<nlayer+1; i++){
+        for(int i=0; i<nlayer; i++){
             delta_Temp[i]=delta_time*delta_E[i]*g/((p[i]-p[i+1])*C_p);
             T[i]=T[i]+delta_Temp[i];
         }
@@ -223,7 +255,6 @@ int main(int argc, char **argv)
         for(int i=0; i<nlayer+1; i++){ 
                 printf("%d, theta=%f, T=%f, p_middle=%f\n", i, theta[i], T[i], (p[i]+p[i+1])/2);
             }
-            printf("\n");
     }
         
 
@@ -232,7 +263,3 @@ return 0;
 }
 //edit note: 17.Okt.2023
 //edit note: 30.Okt.2023
-//edit note: 07.Okt.2023 implemented direction and wavelength dependency of each cloud layer. Worked on the sum function of B and next step to update the E_up/E_down. Need to work with the theory first.
-
-
-
