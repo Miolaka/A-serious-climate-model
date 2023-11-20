@@ -24,6 +24,9 @@ int stability(float theta_i, float theta_j){
     if(theta_i>theta_j){
         return 1;
     }
+    else{
+        return 0;
+    }
 }
 
 
