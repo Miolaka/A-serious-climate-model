@@ -55,16 +55,16 @@ int main(int argc, char **argv)
     int unstable = 1; // stability condition 1 or 0
     double p_delta = p_ground/nlevel; //100hPa per level
     double p_middle;
-    int heat_time = 5;
+    int heat_time = 30;
     //double heat_temp = 1;
-    double epsilon = 0.33; //thickness???
+    double epsilon = 0.34; //thickness???
     double alpha = epsilon;
     double sigma_b = 5.67*pow(10,-8); //5.67*10^-8
     double E_up[nlevel];
     double E_down[nlevel];
     double delta_E[nlevel];
     //int delta_time = 60*60*1; //12 stunden
-    int delta_time = 60*60*1; //1 stunden
+    int delta_time = 60*60*1*1; //1 stunden
     double delta_Temp[nlevel];
     double C_p = 1004; // specific constant
     double g = 9.81; //gravitational constant
@@ -89,7 +89,7 @@ int main(int argc, char **argv)
 
     double lambda_start = 1*pow(10,-6); 
     double lambda_end = 26*pow(10,-6);
-    int gridnumber = 10;
+    int gridnumber = 20;
     double delta_lambda = (lambda_end-lambda_start)/gridnumber;
     //double tau2d[lambda][p]; //not working, non-int
                 
@@ -99,7 +99,7 @@ int main(int argc, char **argv)
 
     //1. Initial variables
     //1.1 Create pressure gradient, loop time = nlevel
-printf("test B is %f \n\n", B_plank(h_planck, c_light, 0.0001, k_boltzman, 300));
+    printf("test B is %f \n\n", B_plank(h_planck, c_light, 0.0001, k_boltzman, 300));
 
     for(int i=0; i<nlevel; i++){
         p[i]=p_ground-(nlevel-i)*p_delta; //1000hPa - n*100hPa
@@ -122,9 +122,9 @@ printf("test B is %f \n\n", B_plank(h_planck, c_light, 0.0001, k_boltzman, 300))
 
     //2. Time loop
     for(int it=0; it<heat_time; it++){
-
+        unstable = 1;
         //2.1 calculate Theta
-        printf("--------------------------------\nInitiating Theta temperature \n");
+        printf("--------------------------------\n recalculating Theta temperature \n");
         for (int i=0; i<nlayer; i++){ //runs nlevel times
             theta[i] = T2theta(T[i],p_ground,(p[i]+p[i+1])/2);
             //printf("hi2\n");
@@ -132,7 +132,8 @@ printf("test B is %f \n\n", B_plank(h_planck, c_light, 0.0001, k_boltzman, 300))
         }
             //printf("i is", i);
         for(int i=0; i<nlayer; i++){ 
-            printf("%d, theta=%f, T=%f, p_middle=%f\n", i, theta[i], T[i], (p[i]+p[i+1])/2);
+            //!!!
+            //printf("%d, theta=%f, T=%f, p_middle=%f\n", i, theta[i], T[i], (p[i]+p[i+1])/2);
         }
         printf("done \n--------------------------------\n");
     
@@ -171,7 +172,7 @@ printf("test B is %f \n\n", B_plank(h_planck, c_light, 0.0001, k_boltzman, 300))
             T[i] = theta2T(theta[i],p_ground, (p[i]+p[i+1])/2);
             //print info
             
-            printf("%d, theta=%f, T=%f, p_middle=%f\n", i, theta[i], T[i], (p[i]+p[i+1])/2);
+            //printf("%d, theta=%f, T=%f, p_middle=%f\n", i, theta[i], T[i], (p[i]+p[i+1])/2);
         }    
             printf("\n");
                     
@@ -238,7 +239,7 @@ printf("test B is %f \n\n", B_plank(h_planck, c_light, 0.0001, k_boltzman, 300))
             //loop for angle mu
             //set initial array element value = 0
             for(int k=0; k<nlevel; k++){
-                E_up[k] = 0;
+                E_up[nlevel-1] = 0;
                 E_down[k] = 0;
             }
             for(int imu=0; imu<imu_max; imu++){
@@ -249,7 +250,8 @@ printf("test B is %f \n\n", B_plank(h_planck, c_light, 0.0001, k_boltzman, 300))
                 //upward L_up
                 //(p,T,tau -> E_up, E_dw)
                 //L_up[nlevel]=(1/pi)*sigma_b*pow(T[nlevel-1],4);
-                L_up[nlevel-1]=L_B[nlayer-1];
+                L_up[nlevel-1]=L_B[nlayer-1]; //the actually highest defined elements
+
                 for(int i=nlevel-2; i>-1; i--){
                     //calculate L
                     L_up[i]=L_up[i+1]*(1-absorb)+(1/pi)*L_B[i]*emi;
@@ -262,8 +264,11 @@ printf("test B is %f \n\n", B_plank(h_planck, c_light, 0.0001, k_boltzman, 300))
                 //downward L_down
                 //
                 L_down[0]=0;
+                //ERROR! : L_B[i] defined with nlayer not nlevel! L_B[nlevel] overshooting!
                 for(int i=1; i<nlevel; i++){
-                    L_down[i]=L_down[i-1]*(1-absorb)+(1.0/pi)*L_B[i]*emi;
+                    L_down[i]=L_down[i-1]*(1-absorb)+(1.0/pi)*L_B[i-1]*emi;
+                    //printf("L_B %d = %.9f \n", i, L_B[i]);
+                    //printf("L_down %d = %.9f \n", i, L_down[i]);
                     //L_down[i]=L_down[i-1]*(1-absorb)+(1/pi)*sigma_b*pow(T[i-1],4)*emi;
                     E_down[i]=E_down[i]+2*pi*L_down[i]*mu*delta_mu;
                     //printf("E_dw %d = %.9f\n", i, E_down[i]);
@@ -280,7 +285,8 @@ printf("test B is %f \n\n", B_plank(h_planck, c_light, 0.0001, k_boltzman, 300))
         //Problem Paul: what about i=nlayer-1?
         for(int i=0; i<nlayer; i++){
             delta_E[i] = E_down[i]+E_up[i+1]-E_up[i]-E_down[i+1];
-            //printf("delta_E %d = %.9f\n", i, delta_E[i]);
+            //printf("E_down[i]=%f    E_up[i+1]%f E_up[i]%f   E_down[i+1]%f   \n  ",E_down[i],E_up[i+1],E_up[i],E_down[i+1]);
+            //printf("delta_E by i= %d = %.9f\n", i, delta_E[i]);
         } //delta_E[nlayer]
 
         //printf("2.5 done \n");
@@ -297,7 +303,7 @@ printf("test B is %f \n\n", B_plank(h_planck, c_light, 0.0001, k_boltzman, 300))
         for(int i=0; i<nlayer; i++){
             delta_Temp[i]=delta_time*delta_E[i]*g/((p[i]-p[i+1])*C_p);
             T[i]=T[i]+delta_Temp[i];
-            printf("delta_T by i=%d is %.9f \n", i, delta_Temp[i]);
+            //printf("delta_T by i=%d is %.9f \n", i, delta_Temp[i]);
         }
 
         //2.7 Tempeature to Theta (loop 2.1)
