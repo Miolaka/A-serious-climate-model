@@ -1,11 +1,45 @@
 #include <stdio.h>
 #include <math.h>
-#include "header.h"
+
 //#include "functions.c" //maybe not required
+//header
+float T2theta (float T, float p_ground, float p_middle);
+float theta2T (float theta, float p_ground, float p_middle);
+int stability(float theta_i, float theta_j);
+
+
+//float sum(float x, float y){}
+
+//temperature to pot. temp
+float T2theta (float T, float p_ground, float p_middle){
+    float theta = T*pow(p_ground/p_middle,2.0/7.0);
+    return theta;
+}
+
+//pot.temp to temp, 1000hPa=100000Pa
+float theta2T (float theta, float p_ground, float p_middle){
+    float T = theta*pow(p_ground/p_middle,-1*(2.0/7.0));
+    return T;
+}
+
+//void(){}
+    //print is a void
+
+//stability check
+int stability(float theta_i, float theta_j){
+    if(theta_i>theta_j){
+        return 1;
+    }
+    else{
+        return 0;
+    }
+}
+
+
 
 int main(int argc, char **argv)
 {
-    int nlayer=9; //p[9] = T[8]
+    int nlayer=9; //p[10] = T[9]
     float p_ground = 100000.0; //1000hPa at ground
     int nlevel = nlayer+1; //level is 1 more than layers
     float p[nlevel]; //pressure
@@ -36,7 +70,7 @@ int main(int argc, char **argv)
     float absorb;
     float emi;
     float pi = 3.14159265;
-    float B[nlayer];
+    float B[nlevel];
     float lambda;
     float h_planck = 6.6260628E-34;
     float c_light = 299792458;
@@ -59,13 +93,13 @@ int main(int argc, char **argv)
 
     //1. Initial variables
     //1.1 Create pressure gradient, loop time = nlevel
-    for(int i=0; i<nlevel; i++){
+    for(int i=0; i<nlevel+1; i++){
         p[i]=p_ground-(nlevel-i)*p_delta; //1000hPa - n*100hPa
         //printf("%dpressure=%f\n",i,p[i]);
     }
     //1.2 Create temperature gradient, loop time = nlayer
     printf("--------------------------------\nInitiating temperature \n");
-    for(int i=0; i<nlayer; i++){ 
+    for(int i=0; i<nlayer+1; i++){ 
         T[i]= 293.0-(i)*5.0; //-5K each layer,to ground temp 293K
         //printf("T=%f, i=%d \n",T[i],i);
         theta[i]= T2theta(T[i],p_ground,(p[i]+p[i+1])/2);
@@ -128,12 +162,11 @@ int main(int argc, char **argv)
         for (int i=0; i<nlayer; i++){                
             T[i] = theta2T(theta[i],p_ground, (p[i]+p[i+1])/2);
             //print info
-            for(int i=0; i<nlevel; i++){ 
-                printf("%d, theta=%f, T=%f, p_middle=%f\n", i, theta[i], T[i], (p[i]+p[i+1])/2);
-            }
+            
+            printf("%d, theta=%f, T=%f, p_middle=%f\n", i, theta[i], T[i], (p[i]+p[i+1])/2);
+        }    
             printf("\n");
                     
-        }
         //printf("2.3 done \n");
         //2.4 Change phase ####### (Radiation)
         //radiation
@@ -242,13 +275,14 @@ int main(int argc, char **argv)
         //2.6 From delta_E to temperature
         for(int i=0; i<nlayer; i++){
             delta_Temp[i]=delta_time*delta_E[i]*g/((p[i]-p[i+1])*C_p);
+            printf("delta_T is %f \n", delta_Temp[i]);
             T[i]=T[i]+delta_Temp[i];
         }
 
         //2.7 Tempeature to Theta (loop 2.1)
         //7. loop
         printf("--------------------------------\n Profile: \n");
-        for(int i=0; i<nlayer+1; i++){ 
+        for(int i=0; i<nlayer; i++){ 
                 printf("%d, theta=%f, T=%f, p_middle=%f\n", i, theta[i], T[i], (p[i]+p[i+1])/2);
             }
             printf("--------------------------------\n \n");
