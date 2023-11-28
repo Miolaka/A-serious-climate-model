@@ -5,7 +5,7 @@
 
 int main(int argc, char **argv)
 {
-    int nlayer=20; //10 elemente 0-9, p[9]<p[nlayer]
+    int nlayer=100; //10 elemente 0-9, p[9]<p[nlayer]
     double p_ground = 100000.0; //1000hPa at ground
     int nlevel = nlayer+1; //level is 1 more than layers
     double p[nlevel]; //pressure
@@ -15,24 +15,24 @@ int main(int argc, char **argv)
     int unstable = 1; // stability condition 1 or 0
     double p_delta = p_ground/nlevel; //100hPa per level
     double p_middle;
-    int ntime = 20;
+    int ntime = 20000;
     //double heat_temp = 1;
-    double epsilon = 0.33; //thickness???
-    double alpha = epsilon;
-    double sigma_b = 5.67*pow(10,-8); //5.67*10^-8
+    //legacy:
+    //double epsilon = 0.33; //thickness???
+    //double alpha = epsilon;
+    double sigma_b = 5.67*pow(10.0,-8.0); //5.67*10^-8
     double E_up[nlevel];
     double E_down[nlevel];
     double delta_E[nlevel];
     //int delta_time = 60*60*1; //12 stunden
     int delta_time = 60*60*1*1; //1 stunden
     double delta_Temp[nlevel];
-    double C_p = 1004; // specific constant
+    double C_p = 1004.0; // specific constant
     double g = 9.81; //gravitational constant
     double L_up[nlevel];
     double L_down[nlevel]; 
     int imu_max = 10; //split in 10 steps
-    double mu_max = 90; //mu=cos(theta) = [1,0] /what is mu_max
-    double delta_mu=mu_max/imu_max;
+    double delta_mu=1.0/imu_max;
     double absorb;
     double emi;
     double pi = 3.14159265;
@@ -43,12 +43,12 @@ int main(int argc, char **argv)
     double k_boltzman = 1.3806503E-23;
 
     
-    double tau_co2 = 1;
-    double tau_h2o = 1;
+    double tau_co2 = 1.0;
+    double tau_h2o = 1.0;
     double tau = tau_co2+tau_h2o;
 
-    double lambda_start = 1*pow(10,-6); 
-    double lambda_end = 26*pow(10,-6);
+    double lambda_start = 1.0*pow(10.0,-6.0); 
+    double lambda_end = 26.0*pow(10.0,-6.0);
     int gridnumber = 20;
     double delta_lambda = (lambda_end-lambda_start)/gridnumber;
     //double tau2d[lambda][p]; //not working, non-int
@@ -59,7 +59,7 @@ int main(int argc, char **argv)
 
     //1. Initial variables
     //1.1 Create pressure gradient, loop time = nlevel
-    printf("test B is %f \n\n", B_plank(h_planck, c_light, 0.0001, k_boltzman, 300));
+    printf("test B is %f \n\n", B_plank(h_planck, c_light, 0.0001, k_boltzman, 300.0));
 
     for(int i=0; i<nlevel; i++){
         p[i]=p_ground-(nlevel-i)*p_delta; //1000hPa - n*100hPa
@@ -68,7 +68,7 @@ int main(int argc, char **argv)
     //1.2 Create temperature gradient, loop time = nlayer
     printf("--------------------------------\nInitiating temperature \n");
     for(int i=0; i<nlayer; i++){ 
-        T[i]= 293.0-(i)*5.0; //-5K each layer,to ground temp 293K
+        T[i]= 180 + (i)*5.0; //-5K each layer,to ground temp 293K
         //printf("T=%f, i=%d \n",T[i],i);
         theta[i]= T2theta(T[i],p_ground,(p[i]+p[i+1])/2);
         //theta[i]=T[i]*pow((p_ground/p_middle),adiabatic_constant); //gamma?
@@ -82,11 +82,10 @@ int main(int argc, char **argv)
 
     //2. Time loop
     for(int it=0; it<ntime; it++){
-        unstable = 1;
         //2.1 calculate Theta
-        printf("--------------------------------\n recalculating Theta temperature \n");
+        printf("Iteration: %d, \n--------------------------------\n recalculating Theta temperature \n", it);
         for (int i=0; i<nlayer; i++){ //runs nlevel times
-            theta[i] = T2theta(T[i],p_ground,(p[i]+p[i+1])/2);
+            theta[i] = T2theta(T[i],p_ground,(p[i]+p[i+1])/2.0);
             //printf("hi2\n");
             //printf("i is %d\n", i);
         }
@@ -100,6 +99,7 @@ int main(int argc, char **argv)
         //printf("2.1 done \n");
 
         //2.2 Convection //unstable if 0
+        unstable = 1;
         while(unstable == 1){
             unstable = 0; //stable assumption
             for(int i=1; i<nlayer; i++){ //till which i?
@@ -110,8 +110,7 @@ int main(int argc, char **argv)
                 //printf("\n");
                 if(theta[i-1]<theta[i]){ //looking find a problem
                     //exchange
-                    double temp_cache = 0.0; 
-                    temp_cache = theta[i-1];
+                    double temp_cache = theta[i-1];
                     theta[i-1] = theta[i];
                     theta[i] = temp_cache; 
                     temp_cache = 0.0; 
@@ -130,7 +129,7 @@ int main(int argc, char **argv)
         //printf("2.2 done \n");
         //2.3 new Theta to temperature
         for (int i=0; i<nlayer; i++){                
-            T[i] = theta2T(theta[i],p_ground, (p[i]+p[i+1])/2);
+            T[i] = theta2T(theta[i],p_ground, (p[i]+p[i+1])/2.0);
             //print info
             
             //printf("%d, theta=%f, T=%f, p_middle=%f\n", i, theta[i], T[i], (p[i]+p[i+1])/2);
@@ -154,27 +153,27 @@ int main(int argc, char **argv)
         //add radiative transfer window
         for (double lambda = lambda_start; lambda<lambda_end; lambda = lambda+delta_lambda){
             // printf("lambda is %f \n", lambda);
-            if(lambda>0&& lambda<8*pow(10,-6)){
-                tau_co2 = 1;
-                tau_h2o = 1;
+            if(lambda>0&& lambda< 8.0 *pow(10.0,-6.0)){
+                tau_co2 = 1.0;
+                tau_h2o = 1.0;
                 tau = tau_co2+tau_h2o;
 
             }
-            else if(lambda>8*pow(10,-6) && lambda<12*pow(10,-6)){
-                tau_co2 = 0.1;
-                tau_h2o = 0.1;
+            else if(lambda > 8.0*pow(10,-6) && lambda<12*pow(10.0,-6.0)){
+                tau_co2 = 0.01;
+                tau_h2o = 0.01;
                 tau = tau_co2+tau_h2o;
 
             }
-            else if(lambda>12*pow(10,-6)){
-                tau_co2 = 1;
-                tau_h2o = 1;
+            else if(lambda>12.0 *pow(10.0,-6.0)){
+                tau_co2 = 1.0;
+                tau_h2o = 1.0;
                 tau = tau_co2+tau_h2o;
 
             }
             else{
-                tau_co2 = 1;
-                tau_h2o = 1;
+                tau_co2 = 1.0;
+                tau_h2o = 1.0;
                 tau = tau_co2+tau_h2o;
             }
             //printf("2.4 lambda done \n");
@@ -200,12 +199,15 @@ int main(int argc, char **argv)
             //loop for angle mu
             //set initial array element value = 0
             for(int k=0; k<nlevel; k++){
-                E_up[nlevel-1] = 0;
-                E_down[k] = 0;
+                E_up[k] = 0.0;
+                E_down[k] = 0.0;
             }
             for(int imu=0; imu<imu_max; imu++){
-                double mu=(1+imu)/imu_max;
+                double mu= (1.0+imu)/imu_max - delta_mu/2; //verschiebung integral punkte
                 absorb=1.0-exp(-tau/mu); //works
+                //printf("mu=%f   ", mu);
+                //printf("mu/2=%f  ", delta_mu/2);
+                //printf("absorb=%f \n", absorb);
                 emi=absorb;
 
                 //upward L_up
@@ -221,6 +223,7 @@ int main(int argc, char **argv)
                     E_up[i]=E_up[i]+2*pi*L_up[i]*mu*delta_mu;
                     //E_up[i]=E_up[i]+E_up_B;
                 }
+                //printf("E_up[0] = %f\n", E_up[0]);
 
                 //downward L_down
                 //
@@ -231,7 +234,7 @@ int main(int argc, char **argv)
                     //printf("L_B %d = %.9f \n", i, L_B[i]);
                     //printf("L_down %d = %.9f \n", i, L_down[i]);
                     //L_down[i]=L_down[i-1]*(1-absorb)+(1/pi)*sigma_b*pow(T[i-1],4)*emi;
-                    E_down[i]=E_down[i]+2*pi*L_down[i]*mu*delta_mu;
+                    E_down[i]=E_down[i]+2.0 *pi*L_down[i]*mu*delta_mu;
                     //printf("E_dw %d = %.9f\n", i, E_down[i]);
                 }
 
@@ -274,9 +277,12 @@ int main(int argc, char **argv)
                 printf("%d, theta=%.2f, T=%.2f, p_middle=%.2f\n", i, theta[i], T[i], (p[i]+p[i+1])/2);
             }
             printf("--------------------------------\n \n");
-    }
         
-
+        if(theta[nlayer-1]<0){
+            printf("%f", theta[nlayer-1]);
+            break;
+        }
+    }
 return 0;
     
 }

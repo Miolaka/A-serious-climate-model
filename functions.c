@@ -18,22 +18,14 @@ double T2theta (double T, double p_ground, double p_middle){
 
 //pot.temp to temp, 1000hPa=100000Pa
 double theta2T (double theta, double p_ground, double p_middle){
-    double T = theta*pow(p_ground/p_middle,-1*(2.0/7.0));
+    double T = theta*pow(p_ground/p_middle,-1.0*(2.0/7.0));
     return T;
 }
 
 //void(){}
     //print is a void
 
-//stability check
-int stability(double theta_i, double theta_j){
-    if(theta_i>theta_j){
-        return 1;
-    }
-    else{
-        return 0;
-    }
-}
+
 
 //radiation, E_em, epsilon, sigma_b, alpha
 //need E_up, E_dw
