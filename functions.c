@@ -2,17 +2,23 @@
 #include <math.h>
 
 
-//float sum(float x, float y){}
+
+//double sum(double x, double y){}
+double B_plank(double h_planck, double c_light, double lambda, double k_boltzman, double T){
+    double B_plank = (2.0*h_planck*c_light*c_light)/pow(lambda,5)/(exp(h_planck*c_light/lambda/k_boltzman/T)-1);
+    return B_plank;
+}
+
 
 //temperature to pot. temp
-float T2theta (float T, float p_ground, float p_middle){
-    float theta = T*pow(p_ground/p_middle,2.0/7.0);
+double T2theta (double T, double p_ground, double p_middle){
+    double theta = T*pow(p_ground/p_middle,2.0/7.0);
     return theta;
 }
 
 //pot.temp to temp, 1000hPa=100000Pa
-float theta2T (float theta, float p_ground, float p_middle){
-    float T = theta*pow(p_ground/p_middle,-1*(2.0/7.0));
+double theta2T (double theta, double p_ground, double p_middle){
+    double T = theta*pow(p_ground/p_middle,-1*(2.0/7.0));
     return T;
 }
 
@@ -20,7 +26,7 @@ float theta2T (float theta, float p_ground, float p_middle){
     //print is a void
 
 //stability check
-int stability(float theta_i, float theta_j){
+int stability(double theta_i, double theta_j){
     if(theta_i>theta_j){
         return 1;
     }
@@ -28,10 +34,6 @@ int stability(float theta_i, float theta_j){
         return 0;
     }
 }
-
-
-
-
 
 //radiation, E_em, epsilon, sigma_b, alpha
 //need E_up, E_dw

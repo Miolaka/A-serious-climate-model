@@ -55,7 +55,7 @@ int main(int argc, char **argv)
     int unstable = 1; // stability condition 1 or 0
     double p_delta = p_ground/nlevel; //100hPa per level
     double p_middle;
-    int heat_time = 30;
+    int ntime = 30;
     //double heat_temp = 1;
     double epsilon = 0.34; //thickness???
     double alpha = epsilon;
@@ -121,7 +121,7 @@ int main(int argc, char **argv)
     
 
     //2. Time loop
-    for(int it=0; it<heat_time; it++){
+    for(int it=0; it<ntime; it++){
         unstable = 1;
         //2.1 calculate Theta
         printf("--------------------------------\n recalculating Theta temperature \n");
@@ -154,6 +154,7 @@ int main(int argc, char **argv)
                     temp_cache = theta[i-1];
                     theta[i-1] = theta[i];
                     theta[i] = temp_cache; 
+                    temp_cache = 0.0; 
                     //print info
                     //for(int i=0; i<nlayer+1; i++){ 
                     //    printf("%d, theta=%f, T=%f, p_middle=%f\n", i, theta[i], T[i], (p[i]+p[i+1])/2);
