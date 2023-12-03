@@ -13,7 +13,7 @@ int main(int argc, char **argv)
     double T[nlayer]; //temperature
     double adiabatic_constant = 2.0/7.0; //R_a/C_p
     int unstable = 1; // stability condition 1 or 0
-    double p_delta = p_ground/nlevel; //100hPa per level
+    double p_delta = p_ground/nlayer; //100hPa per level
     double p_middle;
     int ntime = 20000;
     //double heat_temp = 1;
@@ -25,8 +25,8 @@ int main(int argc, char **argv)
     double E_down[nlevel];
     double delta_E[nlevel];
     //int delta_time = 60*60*1; //12 stunden
-    int delta_time = 60*60*1*1; //1 stunden
-    double delta_Temp[nlevel];
+    double delta_time = 60.0*60.0*1.0*1.0; //1 stunden
+    double delta_Temp[nlayer];
     double C_p = 1004.0; // specific constant
     double g = 9.81; //gravitational constant
     double L_up[nlevel];
@@ -48,7 +48,7 @@ int main(int argc, char **argv)
     double tau = tau_co2+tau_h2o;
 
     double lambda_start = 1.0*pow(10.0,-6.0); 
-    double lambda_end = 26.0*pow(10.0,-6.0);
+    double lambda_end = 28.0*pow(10.0,-6.0);
     int gridnumber = 20;
     double delta_lambda = (lambda_end-lambda_start)/gridnumber;
     //double tau2d[lambda][p]; //not working, non-int
@@ -293,3 +293,7 @@ return 0;
 //last time: CO2 and gas
 //this time: real radiative transfer
 //last week Wedsday CO2 
+//comment paul: Woher kommt aktuell die Energie in deinem Modell?
+//Mir scheint, es gibt keinen Input von der Sonne. Daher wird es immer kälter.
+//Am besten, du gibst in der Energiebilanz der untersten Schicht noch einen Term E0/4(1-A) dazu.
+//E0/4(1-A)
