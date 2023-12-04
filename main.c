@@ -15,7 +15,7 @@ int main(int argc, char **argv)
     int unstable = 1; // stability condition 1 or 0
     double p_delta = p_ground/nlayer; //100hPa per level
     double p_middle;
-    int ntime = 20000;
+    int ntime = 200;
     //double heat_temp = 1;
     //legacy:
     //double epsilon = 0.33; //thickness???
@@ -61,8 +61,8 @@ int main(int argc, char **argv)
     //1.1 Create pressure gradient, loop time = nlevel
     printf("test B is %f \n\n", B_plank(h_planck, c_light, 0.0001, k_boltzman, 300.0));
 
-    for(int i=0; i<nlevel; i++){
-        p[i]=p_ground-(nlevel-i)*p_delta; //1000hPa - n*100hPa
+    for(int i=0; i<nlayer; i++){
+        p[i]=p_ground-(nlayer-i)*p_delta; //1000hPa - n*100hPa
         //printf("%dpressure=%f\n",i,p[i]);
     }
     //1.2 Create temperature gradient, loop time = nlayer
@@ -222,6 +222,7 @@ int main(int argc, char **argv)
                     //L_up[i]=L_up[i+1]*(1-absorb)+(1/pi)*sigma_b*pow(T[i],4)*emi;
                     E_up[i]=E_up[i]+2*pi*L_up[i]*mu*delta_mu;
                     //E_up[i]=E_up[i]+E_up_B;
+
                 }
                 //printf("E_up[0] = %f\n", E_up[0]);
 
@@ -236,10 +237,11 @@ int main(int argc, char **argv)
                     //L_down[i]=L_down[i-1]*(1-absorb)+(1/pi)*sigma_b*pow(T[i-1],4)*emi;
                     E_down[i]=E_down[i]+2.0 *pi*L_down[i]*mu*delta_mu;
                     //printf("E_dw %d = %.9f\n", i, E_down[i]);
+                    
                 }
 
                 //Radiance to Irradiance
-                //E=2*pi*(L(mu)*mu[i]*delta_mu;)
+
             }
         }
         //printf("2.4 done \n");
@@ -249,6 +251,16 @@ int main(int argc, char **argv)
         //Problem Paul: what about i=nlayer-1?
         for(int i=0; i<nlayer; i++){
             delta_E[i] = E_down[i]+E_up[i+1]-E_up[i]-E_down[i+1];
+            //there's a problem at ground layer.
+                    //Solar radiation
+                    if (i==nlayer-1){
+                    //E=2*pi*(L(mu)*mu[i]*delta_mu;)
+                        double E_0 = 1361.0; //solar irradiance E_0 [W/m2]
+                        printf("absorb = %f\n", absorb);
+                        printf("E_0 = %f\n", E_0/4.0/(1-absorb));
+                        E_down[i] = E_down[i] + E_0/4.0/(1-absorb); //yet A is now calculated with window
+                    }
+            
             //printf("E_down[i]=%f    E_up[i+1]%f E_up[i]%f   E_down[i+1]%f   \n  ",E_down[i],E_up[i+1],E_up[i],E_down[i+1]);
             //printf("delta_E by i= %d = %.9f\n", i, delta_E[i]);
         } //delta_E[nlayer]

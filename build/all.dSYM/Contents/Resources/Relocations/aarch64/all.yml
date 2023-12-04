@@ -2,10 +2,10 @@
 triple:          'arm64-apple-darwin'
 binary-path:     '/Users/miolaka/Projects/A-serious-climate-model/build/all'
 relocations:
-  - { offsetInCU: 0x26, offset: 0x26, size: 0x8, addend: 0x0, symName: _B_plank, symObjAddr: 0x0, symBinAddr: 0x100002B3C, symSize: 0xAC }
-  - { offsetInCU: 0x41, offset: 0x41, size: 0x8, addend: 0x0, symName: _B_plank, symObjAddr: 0x0, symBinAddr: 0x100002B3C, symSize: 0xAC }
-  - { offsetInCU: 0xAF, offset: 0xAF, size: 0x8, addend: 0x0, symName: _T2theta, symObjAddr: 0xAC, symBinAddr: 0x100002BE8, symSize: 0x58 }
-  - { offsetInCU: 0x101, offset: 0x101, size: 0x8, addend: 0x0, symName: _theta2T, symObjAddr: 0x104, symBinAddr: 0x100002C40, symSize: 0x58 }
-  - { offsetInCU: 0x153, offset: 0x153, size: 0x8, addend: 0x0, symName: _stability, symObjAddr: 0x15C, symBinAddr: 0x100002C98, symSize: 0x44 }
-  - { offsetInCU: 0x189, offset: 0x189, size: 0x8, addend: 0x0, symName: _main, symObjAddr: 0x1A0, symBinAddr: 0x100002CDC, symSize: 0x10B4 }
+  - { offsetInCU: 0x26, offset: 0x26, size: 0x8, addend: 0x0, symName: _B_plank, symObjAddr: 0x0, symBinAddr: 0x100002BE8, symSize: 0xAC }
+  - { offsetInCU: 0x41, offset: 0x41, size: 0x8, addend: 0x0, symName: _B_plank, symObjAddr: 0x0, symBinAddr: 0x100002BE8, symSize: 0xAC }
+  - { offsetInCU: 0xAF, offset: 0xAF, size: 0x8, addend: 0x0, symName: _T2theta, symObjAddr: 0xAC, symBinAddr: 0x100002C94, symSize: 0x58 }
+  - { offsetInCU: 0x101, offset: 0x101, size: 0x8, addend: 0x0, symName: _theta2T, symObjAddr: 0x104, symBinAddr: 0x100002CEC, symSize: 0x58 }
+  - { offsetInCU: 0x153, offset: 0x153, size: 0x8, addend: 0x0, symName: _stability, symObjAddr: 0x15C, symBinAddr: 0x100002D44, symSize: 0x44 }
+  - { offsetInCU: 0x189, offset: 0x189, size: 0x8, addend: 0x0, symName: _main, symObjAddr: 0x1A0, symBinAddr: 0x100002D88, symSize: 0x1020 }
 ...
