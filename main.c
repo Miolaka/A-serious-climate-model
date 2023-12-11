@@ -1,35 +1,36 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 #include "header.h"
-//#include "functions.c" //maybe not required
+#include "ascii.h"
 
 int main(int argc, char **argv)
-{   
-    double E_0 = 1361.0; //solar irradiance E_0 [W/m2]
-    double albedo = 0.30;   //albedo
-    int nlayer=10; //10 elemente 0-9, p[9]<p[nlayer]
-    double p_ground = 100000.0; //1000hPa at ground
-    int nlevel = nlayer+1; //level is 1 more than layers
-    double p[nlevel]; //pressure
-    double theta[nlayer]; //potential temperature
-    double T[nlayer]; //temperature
-    double adiabatic_constant = 2.0/7.0; //R_a/C_p
-    int unstable = 1; // stability condition 1 or 0
-    double p_delta = p_ground/nlayer; //100hPa per level
+{
+    double E_0 = 1361.0;                   // solar irradiance E_0 [W/m2]
+    double albedo = 0.30;                  // albedo
+    int nlayer = 10;                       // 10 elemente 0-9, p[9]<p[nlayer]
+    double p_ground = 100000.0;            // 1000hPa at ground
+    int nlevel = nlayer + 1;               // level is 1 more than layers
+    double p[nlevel];                      // pressure
+    double theta[nlayer];                  // potential temperature
+    double T[nlayer];                      // temperature
+    double adiabatic_constant = 2.0 / 7.0; // R_a/C_p
+    int unstable = 1;                      // stability condition 1 or 0
+    double p_delta = p_ground / nlayer;    // 100hPa per level
     double p_middle;
     int ntime = 10000;
-    double sigma_b = 5.67*pow(10.0,-8.0); //5.67*10^-8
+    double sigma_b = 5.67 * pow(10.0, -8.0); // 5.67*10^-8
     double E_up[nlevel];
     double E_down[nlevel];
     double delta_E[nlevel];
-    double delta_time = 60.0*60.0*1.0*1.0; //1 stunden
+    double delta_time = 60.0 * 60.0 * 1.0 * 1.0; // 1 stunden
     double delta_Temp[nlayer];
     double C_p = 1004.0; // specific constant
-    double g = 9.81; //gravitational constant
+    double g = 9.81;     // gravitational constant
     double L_up[nlevel];
-    double L_down[nlevel]; 
-    int imu_max = 10; //split in 10 steps
-    double delta_mu=1.0/imu_max;
+    double L_down[nlevel];
+    int imu_max = 10; // split in 10 steps
+    double delta_mu = 1.0 / imu_max;
     double absorb[nlayer];
     double emi[nlayer];
     double pi = 3.14159265;
@@ -41,189 +42,310 @@ int main(int argc, char **argv)
     double tau_co2;
     double tau_h2o;
     double tau_total;
-    double lambda_start = 1.0*pow(10.0,-6.0); 
-    double lambda_end = 28.0*pow(10.0,-6.0);
+    double lambda_start = 1.0 * pow(10.0, -6.0);
+    double lambda_end = 28.0 * pow(10.0, -6.0);
     int gridnumber = 20;
-    double delta_lambda = (lambda_end-lambda_start)/gridnumber;
+    double delta_lambda = (lambda_end - lambda_start) / gridnumber;
 
-    //1. Initial variables, create pressure gradient, loop time = nlevel
-    printf("test B is %f \n\n", B_plank(h_planck, c_light, 0.0001, k_boltzman, 300.0));
+    int nwvl = 0, nlyr = 0;
+    int status = 0;
 
-    for(int i=0; i<nlevel; i++){
-        p[i]=p_ground-(nlayer-i)*p_delta;   //1000hPa - n*100hPa
+    char tauCO2filename[FILENAME_MAX] = "./lbl.co2.asc";
+    char tauH2Ofilename[FILENAME_MAX] = "./lbl.h2o.asc";
+    char tauCH4filename[FILENAME_MAX] = "./lbl.ch4.asc";
+    char tauN2Ofilename[FILENAME_MAX] = "./lbl.n2o.asc";
+    char tauO3filename[FILENAME_MAX] = "./lbl.o3.asc";
+
+    double *wvl = NULL;     // 1D array
+    double **tauCO2 = NULL; // 2D array
+    double **tauH2O = NULL; // 2D array
+    double **tauCH4 = NULL; // 2D array
+    double **tauN2O = NULL; // 2D array
+    double **tauO3 = NULL;  // 2D array
+    double **tautot = NULL; // 2D array
+
+    /* read CO2 optical thickness profile */
+    status = ASCII_file2xy2D(tauCO2filename,
+                             &nwvl, &nlyr,
+                             &wvl, &tauCO2);
+    if (status != 0)
+    {
+        fprintf(stderr, "Error %d reading %s\n", status, tauCO2filename);
+        return status;
     }
 
-    //1.2 Create temperature gradient, loop time = nlayer
+    fprintf(stderr, " ... read %d wavelengths and %d layers from %s\n",
+            nwvl, nlyr, tauCO2filename);
+
+    /* read H2O optical thickness profile */
+    status = ASCII_file2xy2D(tauH2Ofilename,
+                             &nwvl, &nlyr,
+                             &wvl, &tauH2O);
+
+    if (status != 0)
+    {
+        fprintf(stderr, "Error %d reading %s\n", status, tauH2Ofilename);
+        return status;
+    }
+
+    fprintf(stderr, " ... read %d wavelengths and %d layers from %s\n",
+            nwvl, nlyr, tauH2Ofilename);
+
+    /* read CH4  optical thickness profile */
+    status = ASCII_file2xy2D(tauCH4filename,
+                             &nwvl, &nlyr,
+                             &wvl, &tauCH4);
+
+    if (status != 0)
+    {
+        fprintf(stderr, "Error %d reading %s\n", status, tauCH4filename);
+        return status;
+    }
+
+    fprintf(stderr, " ... read %d wavelengths and %d layers from %s\n",
+            nwvl, nlyr, tauCH4filename);
+
+    /* read N2O optical thickness profile */
+    status = ASCII_file2xy2D(tauN2Ofilename,
+                             &nwvl, &nlyr,
+                             &wvl, &tauN2O);
+
+    if (status != 0)
+    {
+        fprintf(stderr, "Error %d reading %s\n", status, tauN2Ofilename);
+        return status;
+    }
+
+    fprintf(stderr, " ... read %d wavelengths and %d layers from %s\n",
+            nwvl, nlyr, tauN2Ofilename);
+
+    /* read O3 optical thickness profile */
+    status = ASCII_file2xy2D(tauO3filename,
+                             &nwvl, &nlyr,
+                             &wvl, &tauO3);
+
+    if (status != 0)
+    {
+        fprintf(stderr, "Error %d reading %s\n", status, tauO3filename);
+        return status;
+    }
+
+    fprintf(stderr, " ... read %d wavelengths and %d layers from %s\n",
+            nwvl, nlyr, tauO3filename);
+
+    /* add all gases to obtain total optical thickness */
+
+    /* first allocate memory */
+    tautot = calloc(nwvl, sizeof(double));
+    for (int iv = 0; iv < nwvl; iv++)
+        tautot[iv] = calloc(nlyr, sizeof(double));
+
+    for (int iv = 0; iv < nwvl; iv++)
+        for (int ilyr = 0; ilyr < nlyr; ilyr++)
+            tautot[iv][ilyr] = tauCO2[iv][ilyr] + tauH2O[iv][ilyr] + tauCH4[iv][ilyr] + tauN2O[iv][ilyr] + tauO3[iv][ilyr];
+
+    // check if tautot array is filled with values
+    // printf("%7.9f", tautot[0][0]);
+
+    // ##########################################################
+    // ############ Initialize the vertical profile #############
+    // ##########################################################
+
+    // 1. Initial variables, create pressure gradient, loop time = nlevel
+    printf("test B is %f \n\n", B_plank(h_planck, c_light, 0.0001, k_boltzman, 300.0));
+
+    for (int i = 0; i < nlevel; i++)
+    {
+        p[i] = p_ground - (nlayer - i) * p_delta; // 1000hPa - n*100hPa
+    }
+
+    // 1.2 Create temperature gradient, loop time = nlayer
     printf("--------------------------------\nInitiating temperature \n");
-    for(int i=0; i<nlayer; i++){ 
-        T[i]= 180 + (i)*5.0;    //-5K each layer,to ground temp 293K
-        theta[i]= T2theta(T[i],p_ground,(p[i]+p[i+1])/2);
-        printf("%d, theta=%.2f, T=%.2f, p_middle=%.2f\n", i, theta[i], T[i], (p[i]+p[i+1])/2);
+    for (int i = 0; i < nlayer; i++)
+    {
+        T[i] = 180 + (i) * 5.0; //-5K each layer,to ground temp 293K
+        theta[i] = T2theta(T[i], p_ground, (p[i] + p[i + 1]) / 2);
+        printf("%d, theta=%.2f, T=%.2f, p_middle=%.2f\n", i, theta[i], T[i], (p[i] + p[i + 1]) / 2);
     }
     printf("done \n--------------------------------\n");
 
-    //2. Time loop
-    for(int it=0; it<ntime; it++){
+    // 2. Time loop
+    for (int it = 0; it < ntime; it++)
+    {
 
-    
-        //2.2 Convection //unstable if 0
+        // 2.2 Convection //unstable if 0
         unstable = 1;
-        while(unstable == 1){
-            unstable = 0;   //stable assumption
-            for(int i=1; i<nlayer; i++){
-                if(theta[i-1]<theta[i]){
-                    //layer exchange
-                    double temp_cache = theta[i-1];
-                    theta[i-1] = theta[i];
-                    theta[i] = temp_cache; 
-                    temp_cache = 0.0; 
+        while (unstable == 1)
+        {
+            unstable = 0; // stable assumption
+            for (int i = 1; i < nlayer; i++)
+            {
+                if (theta[i - 1] < theta[i])
+                {
+                    // layer exchange
+                    double temp_cache = theta[i - 1];
+                    theta[i - 1] = theta[i];
+                    theta[i] = temp_cache;
+                    temp_cache = 0.0;
                     unstable = 1;
                 }
             }
         }
 
-        //2.3 new Theta to temperature
-        for (int i=0; i<nlayer; i++){                
-            T[i] = theta2T(theta[i],p_ground, (p[i]+p[i+1])/2.0);
-        }    
+        // 2.3 new Theta to temperature
+        for (int i = 0; i < nlayer; i++)
+        {
+            T[i] = theta2T(theta[i], p_ground, (p[i] + p[i + 1]) / 2.0);
+        }
         printf("\n");
 
-        //2.4 Radiative Transfer
-        //2.4.1 Calculate E (naive cloud radiation)  
-        //2.4.2 Calculate better E (better cloud radiation)
+        // 2.4 Radiative Transfer
+        // 2.4.1 Calculate E (naive cloud radiation)
+        // 2.4.2 Calculate better E (better cloud radiation)
 
-        //for wavelength-> for directions-> for ilayer
-        //lambda from 1 micro to 28 micro
-        //add radiative transfer window
+        // for wavelength-> for directions-> for ilayer
+        // lambda from 1 micro to 28 micro
+        // add radiative transfer window
 
-        for (double lambda = lambda_start; lambda<lambda_end; lambda = lambda+delta_lambda){
-            //tau is total optical thickness!
-            if(lambda>0&& lambda< 8.0 *pow(10.0,-6.0)){
+        for (double lambda = lambda_start; lambda < lambda_end; lambda = lambda + delta_lambda)
+        {
+            // tau is total optical thickness!
+            if (lambda > 0 && lambda < 8.0 * pow(10.0, -6.0))
+            {
                 tau_co2 = 0.0;
                 tau_h2o = 0.0;
-                tau_total = tau_co2+tau_h2o;
-
+                tau_total = tau_co2 + tau_h2o;
             }
-            else if(lambda > 8.0*pow(10,-6) && lambda<12*pow(10.0,-6.0)){
+            else if (lambda > 8.0 * pow(10, -6) && lambda < 12 * pow(10.0, -6.0))
+            {
                 tau_co2 = 0.0;
                 tau_h2o = 0.0;
-                tau_total = tau_co2+tau_h2o;
-
+                tau_total = tau_co2 + tau_h2o;
             }
-            else if(lambda>12.0 *pow(10.0,-6.0)){
+            else if (lambda > 12.0 * pow(10.0, -6.0))
+            {
                 tau_co2 = 0.0;
                 tau_h2o = 0.0;
-                tau_total = tau_co2+tau_h2o;
-
+                tau_total = tau_co2 + tau_h2o;
             }
-            else{
+            else
+            {
                 tau_co2 = 0;
                 tau_h2o = 0;
-                tau_total = tau_co2+tau_h2o;
+                tau_total = tau_co2 + tau_h2o;
             }
-                tau_total = 1;
-                    
+            tau_total = 1;
 
-            //layer loop, calculate Radiance B, irradiance E_up_B
+            // layer loop, calculate Radiance B, irradiance E_up_B
             double L_B[nlayer];
-            for(int i=0; i<nlayer; i++){
-                //calculate plack law -> B(T) -> L units
-                //a function to integrate B
+            for (int i = 0; i < nlayer; i++)
+            {
+                // calculate plack law -> B(T) -> L units
+                // a function to integrate B
                 B[i] = B_plank(h_planck, c_light, lambda, k_boltzman, T[i]);
-                L_B[i] = B[i]*delta_lambda;
+                L_B[i] = B[i] * delta_lambda;
             }
-            //loop for angle mu
-            //set initial array element value = 0
-            for(int k=0; k<nlevel; k++){
+            // loop for angle mu
+            // set initial array element value = 0
+            for (int k = 0; k < nlevel; k++)
+            {
                 E_up[k] = 0.0;
                 E_down[k] = 0.0;
             }
-            for(int imu=0; imu<imu_max; imu++){
-                double mu= (1.0+imu)/imu_max - delta_mu/2;  //verschiebung integral punkte
+            for (int imu = 0; imu < imu_max; imu++)
+            {
+                double mu = (1.0 + imu) / imu_max - delta_mu / 2; // verschiebung integral punkte
                 double tau[nlayer];
-                for (int i=0; i<nlayer; i++){
-                    tau[i] = tau_total/nlayer;
-                    absorb[i]=1.0-exp(-tau[i]/mu); //works
-                    emi[i]=absorb[i];
+                for (int i = 0; i < nlayer; i++)
+                {
+                    tau[i] = tau_total / nlayer;
+                    absorb[i] = 1.0 - exp(-tau[i] / mu); // works
+                    emi[i] = absorb[i];
                 }
 
-                //define tau for every layer
+                // define tau for every layer
 
+                // tau_layer =
 
-                //tau_layer = 
-
-                //upward L_up
-                L_up[nlevel-1]=L_B[nlayer-1]; //the actually highest defined elements
-                for(int i=nlevel-2; i>-1; i--){
-                    //printf("absorbtion = %f\n", absorb[i]);
-                    L_up[i]=L_up[i+1]*(1-absorb[i])+(1/pi)*L_B[i]*emi[i];
-                    E_up[i]=E_up[i]+2*pi*L_up[i]*mu*delta_mu;
+                // upward L_up
+                L_up[nlevel - 1] = L_B[nlayer - 1]; // the actually highest defined elements
+                for (int i = nlevel - 2; i > -1; i--)
+                {
+                    // printf("absorbtion = %f\n", absorb[i]);
+                    L_up[i] = L_up[i + 1] * (1 - absorb[i]) + (1 / pi) * L_B[i] * emi[i];
+                    E_up[i] = E_up[i] + 2 * pi * L_up[i] * mu * delta_mu;
                 }
 
-                //downward L_down
-                L_down[0]=0;
-                for(int i=1; i<nlevel; i++){
-                    L_down[i]=L_down[i-1]*(1-absorb[i])+(1.0/pi)*L_B[i-1]*emi[i];
-                    E_down[i]=E_down[i]+2.0 *pi*L_down[i]*mu*delta_mu;
+                // downward L_down
+                L_down[0] = 0;
+                for (int i = 1; i < nlevel; i++)
+                {
+                    L_down[i] = L_down[i - 1] * (1 - absorb[i]) + (1.0 / pi) * L_B[i - 1] * emi[i];
+                    E_down[i] = E_down[i] + 2.0 * pi * L_down[i] * mu * delta_mu;
                 }
-                //Radiance to Irradiance
+                // Radiance to Irradiance
             }
         }
-        
-        //2.5 Calculate delta_E (at each level) (Radiance)
-        for(int i=0; i<nlayer; i++){
-            if(i == 0){
-                printf("E_down[0]= %f  ,E_up[1]= %f  ,E_up[0]= -%f  ,E_down[1]= -%f  , delta_E[0] = %f  \n", E_down[i],E_up[i+1], E_up[i],E_down[i+1],delta_E[i]);
-                delta_E[0] = E_down[i]+E_up[i+1]-E_up[i]-E_down[i+1];
+
+        // 2.5 Calculate delta_E (at each level) (Radiance)
+        for (int i = 0; i < nlayer; i++)
+        {
+            if (i == 0)
+            {
+                printf("E_down[0]= %f  ,E_up[1]= %f  ,E_up[0]= -%f  ,E_down[1]= -%f  , delta_E[0] = %f  \n", E_down[i], E_up[i + 1], E_up[i], E_down[i + 1], delta_E[i]);
+                delta_E[0] = E_down[i] + E_up[i + 1] - E_up[i] - E_down[i + 1];
             }
-            delta_E[i] = E_down[i]+E_up[i+1]-E_up[i]-E_down[i+1];
-            //there's a problem at ground layer?
-                    //Solar radiation at surface
-                    if (i==nlayer-1){
-                        delta_E[i] = delta_E[i] + E_0/4.0*(1.0-albedo); //yet A is now calculated with window
-                        printf("delta_E[ground] = %f\n", delta_E[i]);
-                    }
+            delta_E[i] = E_down[i] + E_up[i + 1] - E_up[i] - E_down[i + 1];
+            // there's a problem at ground layer?
+            // Solar radiation at surface
+            if (i == nlayer - 1)
+            {
+                delta_E[i] = delta_E[i] + E_0 / 4.0 * (1.0 - albedo); // yet A is now calculated with window
+                printf("delta_E[ground] = %f\n", delta_E[i]);
+            }
         }
 
-        //2.6 From delta_E to temperature
-        for(int i=0; i<nlayer; i++){
-            delta_Temp[i]=delta_time*delta_E[i]*g/((p[i+1]-p[i])*C_p);
-            T[i]=T[i]+delta_Temp[i];
-            //printf("-----------------------\n delta T[0] = %f\n", delta_Temp[0]);
-            //printf("delta E[0] = %f\n", delta_E[0]);
-
+        // 2.6 From delta_E to temperature
+        for (int i = 0; i < nlayer; i++)
+        {
+            delta_Temp[i] = delta_time * delta_E[i] * g / ((p[i + 1] - p[i]) * C_p);
+            T[i] = T[i] + delta_Temp[i];
+            // printf("-----------------------\n delta T[0] = %f\n", delta_Temp[0]);
+            // printf("delta E[0] = %f\n", delta_E[0]);
         }
-        //2.1 calculate Theta
+        // 2.1 calculate Theta
         printf("Iteration: %d, \n--------------------------------\n recalculating Theta temperature \n", it);
-        for (int i=0; i<nlayer; i++){   //runs nlevel times
-            theta[i] = T2theta(T[i],p_ground,(p[i]+p[i+1])/2.0);
+        for (int i = 0; i < nlayer; i++)
+        { // runs nlevel times
+            theta[i] = T2theta(T[i], p_ground, (p[i] + p[i + 1]) / 2.0);
         }
         printf("done \n--------------------------------\n");
 
-        //2.7 Tempeature to Theta (loop 2.1)
-        //7. loop
+        // 2.7 Tempeature to Theta (loop 2.1)
+        // 7. loop
         printf("--------------------------------\n Profile: \n");
-        for(int i=0; i<nlayer; i++){ 
-                printf("%d, theta=%.2f, T=%.2f, p_middle=%.2f\n", i, theta[i], T[i], (p[i]+p[i+1])/2);
-            }
-            printf("--------------------------------\n \n");
-        
-        if(theta[nlayer-1]<0){
-            printf("%f", theta[nlayer-1]);
+        for (int i = 0; i < nlayer; i++)
+        {
+            printf("%d, theta=%.2f, T=%.2f, p_middle=%.2f\n", i, theta[i], T[i], (p[i] + p[i + 1]) / 2);
+        }
+        printf("--------------------------------\n \n");
+
+        if (theta[nlayer - 1] < 0)
+        {
+            printf("%f", theta[nlayer - 1]);
             break;
         }
     }
-return 0;
-    
+    return 0;
 }
-//edit note: 17.Okt.2023
-//edit note: 30.Okt.2023
-//edit date: 26.Nov.2023s
+// edit note: 17.Okt.2023
+// edit note: 30.Okt.2023
+// edit date: 26.Nov.2023s
 
-//last time: CO2 and gas
-//this time: real radiative transfer
-//last week Wedsday CO2 
-//comment paul: Woher kommt aktuell die Energie in deinem Modell?
-//Mir scheint, es gibt keinen Input von der Sonne. Daher wird es immer kälter.
-//Am besten, du gibst in der Energiebilanz der untersten Schicht noch einen Term E0/4(1-A) dazu.
-//E0/4(1-A)
+// last time: CO2 and gas
+// this time: real radiative transfer
+// last week Wedsday CO2
+// comment paul: Woher kommt aktuell die Energie in deinem Modell?
+// Mir scheint, es gibt keinen Input von der Sonne. Daher wird es immer kälter.
+// Am besten, du gibst in der Energiebilanz der untersten Schicht noch einen Term E0/4(1-A) dazu.
+// E0/4(1-A)
