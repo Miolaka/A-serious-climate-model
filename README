@@ -1,17 +1,16 @@
-** fpda.lbl.atm
- six columns: z[km], p[hPa], T[K], air density [1/cm**3], H2O [ppm], O3 [ppm];
- altitude, pressure, temperature, density, H2O, and O3 volume mixing ratios  at 21 levels
+Bernhard Mayer, 01/2022
 
-** lbl.xxx.asc, xxx = co2, h2o, o3, ch4, n2o
- Absorption by CO2, H2O, O3, CH4, and N2O
- 21 columns: wavelength [nm], delta_tau[] for the 20 layers 
- defined in lbl.fpda.atm. The delta_tau's are sorted top-down! 
- That is, column 2 is for layer 50-0 hPa, column 21 for 
- layer 1000-950 hPa.
+* repwvl V4.01 -- use representative wavelengths instead of full line-by-line spectrum
+  (Master Thesis Sophie Meier, Bachelor Thesis Michael de Mourgues)
 
- H2O and O3 mixing ratios are defined in fpda.lbl.atm;
- the other components are assumed to be well-mixed with
- CO2  400.000 ppm
- CH4    1.700 ppm
- N2O    0.315 ppm
+* void read_tau (...) returns an array of wavelengths, optical thicknesses and weights;
+  integrated thermal radiance L is calculated as
+  L = sum ( weight[iv] * radiance ( B(wvl[iv]), tau[iv][ilyr] ) )
+  Note that planck radiances B must be given in W / (m2 nm sterad)!
 
+* wavelengths wvl[nm], pressure [Pa], mixing ratio in absolute units (0.0004 instead of 400 ppm)
+
+* all quantities (except pLev) are either level quantities (if prop_at_lev is 1) 
+  or layer quantities (if prop_at_lev is 0); pLev is always a level quantity
+
+* compile compile.sh example which only integrates Planck function at the surface

@@ -1,0 +1,28 @@
+Mie calculations for the representative wavelength parameterizations
+thermal (V4.02) and solar (V1.01)
+
+Droplet radius 10 micron
+
+Output: 4 columns
+
+1 wavelength [nm]
+2 optical thickness
+3 single scattering albedo
+4 asymmetry parameter
+
+---
+
+The single scattering properties were interpolated to the repwvl
+wavelengths and delta-scaled with f=g**2:
+
+tau'    = tau * (1 - omega0*f)
+omega0' = omega0 * (1-f) / (1 - omega0 * f)
+g'      = (g-f) / (1-f)
+
+Mie input file:
+
+ mie_program MIEV0          # Select Mie code by Wiscombe
+ refrac water
+ r_eff 10                   # Specify particle radius
+ wavelength  200. 500000.   # Define wavelengths 
+ wavelength_step 1
