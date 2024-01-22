@@ -8,11 +8,6 @@
 #define k_B 1.3806503e-23
 #define h 6.62607015e-34
 #define c 299792458.0
-#define sigma 5.670374419e-8
-#define g 9.80665
-#define albedo 0.30933137398971344
-#define cp 1004.0
-
 
 // ##########################################################
 // ############ functions ###################################
@@ -69,24 +64,20 @@ double calc_B(double T, double lambda, double wavelength)
 // ############ variables ###################################
 // ##########################################################
 
-void geometic_optic(double incident, double transmittance, double reflectance){
-
-}
-/*
-use double addington to determine T and R
-*/
-void double_addington(){
-    //get molecular scattering 
-    //get molecular absorption
-    //get omega from Rayleigh
-    delta_E[]
-}
-
 int main(int argc, char **argv)
 {
+
+    double sigma = 5.670374419e-8;
+    double g = 9.80665;
+    double albedo = 0.30933137398971344;
+    double cp = 1004.0; //[J/kgK]
     double E_solar = 340.25 * (1 - albedo);
     double lambda;
+    // double h=6.62607015e-34;
+    // double c=299792458.0;
+    // double k_B=1.3806503e-23;
     double dlambda;
+
     double R = 287.0;
     double wavelength;
 
@@ -151,6 +142,7 @@ int main(int argc, char **argv)
     N2_VMR = calloc(nlev, sizeof(double));
     HNO3_VMR = calloc(nlev, sizeof(double));
     CO_VMR = calloc(nlev, sizeof(double));
+
     plevPa = calloc(nlev, sizeof(double));
 
     for (int ilev = 0; ilev < nlev - 1; ilev++)
@@ -383,28 +375,6 @@ int main(int argc, char **argv)
         }
     }
 
-    double q;
-    double r_droplet;
-    double E_pc = q/4/pi/epsilon/r_droplet/r_droplet;
-    double L_ray;
-    L_ray [i] = delta_E[i]*delta_E[i];
-    double tau_sca[];
-    double tau_abs[];
-    for(int i=0; i<nlay; i++){
-        double beta_sca[i]
-        tau_sca[i] = beta_sca[i]*delta_z[i];
-
-        double omega_0 = tau_sca[i]/(tau_sca[i]+tau_abs[i]); 
-
-    }
-
-    double rho; //density
-    double M_a = 28.97; //Molar mass
-    double u = 1.66e-27
-    double n_n = rho/M_a/n_n;
-
-
-
     for (int i = 0; i < nwvl; i++)
     {
 
@@ -415,4 +385,3 @@ int main(int argc, char **argv)
 
     return 0;
 }
-
