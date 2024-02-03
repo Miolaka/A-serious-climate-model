@@ -1,3 +1,13 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
+// ############ functions ###################################
+// ##########################################################
+
+/* calculate layer properties t, r, rdir, sdir, and tdir from            */
+/* layer optical thickness dtau, asymmetry parameter g,                  */
+/* single scattering albedo omega0, and cosine of solar zenith angle mu0 */
 
 void sort_vertically(double Theta[], int nlay, int unstable)
 {
@@ -48,13 +58,6 @@ double calc_B(double T, double lambda, double wavelength)
     return (2.0 * h * c * c / (lambda * lambda * lambda * lambda * lambda)) / (exp(h * c / (lambda * k_B * T)) - 1.0) / 1.0e9; /* W/(m2 nm sterad) */
 }
 
-// ############ functions ###################################
-// ##########################################################
-
-/* calculate layer properties t, r, rdir, sdir, and tdir from            */
-/* layer optical thickness dtau, asymmetry parameter g,                  */
-/* single scattering albedo omega0, and cosine of solar zenith angle mu0 */
-
 void eddington_v2(double dtau, double g, double omega0, double mu0,
                   double *t, double *r, double *rdir, double *sdir, double *tdir)
 {
@@ -84,15 +87,26 @@ void eddington_v2(double dtau, double g, double omega0, double mu0,
     denom = (1.0 / mu0 / mu0 - lambda * lambda);
     alpha5 = ((alpha1 - 1.0 / mu0) * alpha3 - alpha2 * alpha4) / denom;
     alpha6 = (alpha2 * alpha3 - (alpha1 + 1.0 / mu0) * alpha4) / denom;
-
     a33 = exp(-dtau / mu0);
-
     a13 = alpha5 * (1.0 - (a11) * (a33)) - alpha6 * (a12);
     a23 = -(a12)*alpha5 * (a33) + alpha6 * ((a33) - (a11));
-
     *t = a11;
     *r = a12;
     *tdir = a33;
     *rdir = a13 / mu0;
     *sdir = a23 / mu0;
 }
+
+/*
+void read_tau_solar(repwvlfilename, nlev, plevPa, T,
+               H2O_VMR, CO2_VMR, O3_VMR, N2O_VMR, CO_VMR, CH4_VMR, O2_VMR, HNO3_VMR, N2_VMR, NO2_VMR,
+               &tau_SW_abs_mol, &wvl_s, &weight_s, &E0_s, &nwvl_s)
+{
+}
+
+void read_tau("./ReducedLookupFile_thermal_50wvls_corrected.nc", nlev, p, T,
+         H2O_VMR, CO2_VMR, O3_VMR, N2O_VMR, CO_VMR, CH4_VMR, O2_VMR, HNO3_VMR, N2_VMR, // pressure p is always level quantity
+         &tau_LW_abs_mol, &wvl, &weight, &nwvl, 0)
+{
+}
+*/
