@@ -1,5 +1,5 @@
 Miolaka, 03/2024
-This is a Climate Model based on four major components
+This is a maybe not that serious Climate Model based on four major components
 1. Thermodynamical Convection Dynamics
 2. Thermal Radiation Transfer (Stephan Boltzman Law + RTE)
 3. Solar Radiation Transfer (RTE + double-adding method + The Delta-Eddington Approximation)
