@@ -1,8 +1,8 @@
 Miolaka, 03/2024
 This is a Climate Model based on four major components
-1. Thermodynamic Convection Dynamics
-2. Thermol Radiation Transfer
-3. Solar Radiation Transfer
+1. Thermodynamical Convection Dynamics
+2. Thermal Radiation Transfer (Stephan Boltzman Law + RTE)
+3. Solar Radiation Transfer (RTE + double-adding method + The Delta-Eddington Approximation)
 4. Feedback factors e.g. Water Vapor feedback and Cloud feedback
 
 Contact me: Miolaka@outlook.com  
