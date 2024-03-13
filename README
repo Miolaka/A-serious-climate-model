@@ -1,4 +1,13 @@
-Bernhard Mayer, 01/2022
+Miolaka, 03/2024
+This is a Climate Model based on four major components
+1. Thermodynamic Convection Dynamics
+2. Thermol Radiation Transfer
+3. Solar Radiation Transfer
+4. Feedback factors e.g. Water Vapor feedback and Cloud feedback
+
+Data obtained from LibRadTran, Special thanks to Professor Dr. Bernhard Mayer for teaching and developing all the essential equipments.
+Documentation of LibRadTran: https://www.libradtran.org/doku.php
+About Prof. Dr. Mayer: https://www.physik.lmu.de/de/ueber-die-fakultaet-fuer-physik/personen/kontaktseite/bernhard-mayer-000b59f2.html
 
 * repwvl V4.01 -- use representative wavelengths instead of full line-by-line spectrum
   (Master Thesis Sophie Meier, Bachelor Thesis Michael de Mourgues)
